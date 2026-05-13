@@ -1,58 +1,49 @@
-FROM --platform=linux/amd64 debian:12-slim
+FROM debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:1
-ENV VNC_PORT=5901
-ENV NOVNC_PORT=6080
+ENV PORT=10000
 
 # Install lightweight desktop + VNC + noVNC
 RUN apt-get update && apt-get install -y --no-install-recommends \
     lxde-core \
     lxterminal \
     tigervnc-standalone-server \
-    tigervnc-tools \
     novnc \
     websockify \
     firefox-esr \
     dbus-x11 \
-    x11-xserver-utils \
     x11-utils \
-    x11-apps \
+    x11-xserver-utils \
     xterm \
-    nano \
-    vim \
     curl \
     wget \
-    git \
-    net-tools \
     procps \
+    net-tools \
     ca-certificates \
     openssl \
     supervisor \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create VNC directory
+# Create VNC startup config
 RUN mkdir -p /root/.vnc
 
-# Configure LXDE startup
 RUN echo '#!/bin/sh\n\
-export XKL_XMODMAP_DISABLE=1\n\
-unset SESSION_MANAGER\n\
-unset DBUS_SESSION_BUS_ADDRESS\n\
+xrdb $HOME/.Xresources\n\
 startlxde &' > /root/.vnc/xstartup && \
-    chmod +x /root/.vnc/xstartup
+chmod +x /root/.vnc/xstartup
 
-# Set VNC password: changeme
-RUN echo "changeme" | vncpasswd -f > /root/.vnc/passwd && \
-    chmod 600 /root/.vnc/passwd
+# Set VNC password = render
+RUN echo "render" | vncpasswd -f > /root/.vnc/passwd && \
+chmod 600 /root/.vnc/passwd
 
-# Create SSL certificate for noVNC
+# Create SSL cert
 RUN openssl req -x509 -nodes -days 3650 \
-    -subj "/C=US/ST=Cloud/L=Container/O=Docker/CN=localhost" \
-    -newkey rsa:2048 \
-    -keyout /root/novnc.pem \
-    -out /root/novnc.pem
+-subj "/C=US/ST=Cloud/L=Render/O=Docker/CN=localhost" \
+-newkey rsa:2048 \
+-keyout /root/novnc.pem \
+-out /root/novnc.pem
 
 # Supervisor config
 RUN mkdir -p /etc/supervisor/conf.d
@@ -64,13 +55,16 @@ nodaemon=true\n\
 command=/usr/bin/vncserver :1 -geometry 1280x720 -depth 24 -rfbauth /root/.vnc/passwd\n\
 autorestart=true\n\
 priority=1\n\
+stdout_logfile=/dev/stdout\n\
+stderr_logfile=/dev/stderr\n\
 \n\
 [program:novnc]\n\
-command=/usr/bin/websockify --web=/usr/share/novnc/ --cert=/root/novnc.pem 6080 localhost:5901\n\
+command=/usr/bin/websockify --web=/usr/share/novnc/ --cert=/root/novnc.pem 0.0.0.0:${PORT} localhost:5901\n\
 autorestart=true\n\
-priority=2\n' > /etc/supervisor/conf.d/supervisord.conf
+priority=2\n\
+stdout_logfile=/dev/stdout\n\
+stderr_logfile=/dev/stderr\n' > /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 5901
-EXPOSE 6080
+EXPOSE 10000
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord","-c","/etc/supervisor/conf.d/supervisord.conf"]
