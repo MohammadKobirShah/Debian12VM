@@ -19,7 +19,6 @@ if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/
     echo "🏃 Starting container..."
     docker run -d \
       --name vnc-desktop \
-      -p 5901:5901 \
       -p 6080:6080 \
       -e VNC_RESOLUTION=1920x1080 \
       -e VNC_PASSWORD=changeme \
