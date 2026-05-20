@@ -2,9 +2,9 @@ FROM --platform=linux/amd64 debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
+    VNC_PORT=5901 \
     NOVNC_PORT=6080 \
-    VNC_RESOLUTION=1280x720 \
-    VNC_PASSWORD=changeme
+    VNC_RESOLUTION=1280x720
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     lxde-core lxterminal tigervnc-standalone-server tigervnc-common \
@@ -15,9 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /root/.vnc /var/log/supervisor && \
     echo '#!/bin/bash\nexport XKL_XMODMAP_DISABLE=1\nexport XDG_CURRENT_DESKTOP="LXDE"\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nexec startlxde &' > /root/.vnc/xstartup && \
-    chmod +x /root/.vnc/xstartup && \
-    echo "${VNC_PASSWORD}" | vncpasswd -f > /root/.vnc/passwd && \
-    chmod 600 /root/.vnc/passwd
+    chmod +x /root/.vnc/xstartup
 
 RUN openssl req -x509 -nodes -days 3650 \
     -subj "/C=US/ST=State/L=City/O=Org/CN=localhost" \
@@ -31,7 +29,7 @@ logfile=/var/log/supervisor/supervisord.log\n\
 pidfile=/var/run/supervisord.pid\n\
 \n\
 [program:xvnc]\n\
-command=/usr/bin/Xvnc :1 -desktop "Desktop" -geometry %(ENV_VNC_RESOLUTION)s -depth 24 -rfbport %(ENV_VNC_PORT)s -SecurityTypes VncAuth -PasswordFile /root/.vnc/passwd -AlwaysShared -localhost no\n\
+command=/usr/bin/Xvnc :1 -desktop "Web Desktop" -geometry %(ENV_VNC_RESOLUTION)s -depth 24 -rfbport %(ENV_VNC_PORT)s -SecurityTypes None -AlwaysShared -localhost yes\n\
 autorestart=true\n\
 stdout_logfile=/dev/fd/1\n\
 stdout_logfile_maxbytes=0\n\
