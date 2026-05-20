@@ -2,7 +2,6 @@ FROM --platform=linux/amd64 debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
-    VNC_PORT=5901 \
     NOVNC_PORT=6080 \
     VNC_RESOLUTION=1280x720 \
     VNC_PASSWORD=changeme
@@ -59,7 +58,7 @@ startsecs=5' > /etc/supervisor/conf.d/supervisord.conf
 
 RUN echo '#!/bin/bash\nrm -rf /tmp/.X1-lock /tmp/.X11-unix\nexec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-EXPOSE 5901 6080
+EXPOSE 6080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:6080/ || exit 1
