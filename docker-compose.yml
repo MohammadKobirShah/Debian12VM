@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  vnc-desktop:
+    build: .
+    container_name: vnc-desktop
+    ports:
+      - "5901:5901"
+      - "6080:6080"
+    environment:
+      - VNC_RESOLUTION=1920x1080
+      - VNC_PASSWORD=changeme
+    shm_size: '512mb'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
